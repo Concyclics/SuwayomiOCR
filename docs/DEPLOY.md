@@ -6,6 +6,7 @@
 This document covers both **bare-metal** and **Docker** deployment, and how
 to swap the OCR / translation backends to any OpenAI-compatible provider.
 
+- [Recommended setup (TL;DR)](#recommended-setup-tldr)
 - [Quick choice](#quick-choice)
 - [Option A — Bare metal (venv)](#option-a--bare-metal-venv)
 - [Option B — Docker (single image)](#option-b--docker-single-image)
@@ -15,6 +16,97 @@ to swap the OCR / translation backends to any OpenAI-compatible provider.
 - [Swapping the translation backend](#swapping-the-translation-backend)
 - [SuwayomiGO client setup](#suwayomigo-client-setup)
 - [Production tips](#production-tips)
+
+---
+
+## Recommended setup (TL;DR)
+
+The combination that **scored best in our benchmark** ([BENCHMARKS.md](BENCHMARKS.md)):
+
+| Stage | Model | Where it runs |
+|---|---|---|
+| **OCR** | [`deepseek-ai/DeepSeek-OCR-2`](https://huggingface.co/deepseek-ai/DeepSeek-OCR-2) (3 B params, BF16, ~7 GB VRAM) | Local vLLM (one GPU is enough) |
+| **Translation** | `deepseek-v4-flash` | DeepSeek cloud (≈ ¥2.5 / 1000 pages) |
+
+Why this combo: DeepSeek-OCR-2 is a specialised OCR model that outperforms
+generic vision LLMs on dense manga text; `deepseek-v4-flash` is a
+manga-aware chat model that wins on BLEU/chrF in our [benchmark](BENCHMARKS.md)
+and is cheap enough to be effectively free for personal use.
+
+### Step 1 — Get a DeepSeek API key
+
+1. Sign up at **<https://platform.deepseek.com>**.
+2. Open **<https://platform.deepseek.com/api_keys>** and click *Create new key*.
+3. Top up RMB 5–10 — it covers thousands of pages, more than personal use needs.
+4. Copy the key (`sk-...`). You'll paste it into `.env` in Step 3.
+
+### Step 2 — Run DeepSeek-OCR-2 via vLLM (one-time, on a machine with a GPU)
+
+Repo: <https://github.com/deepseek-ai/DeepSeek-OCR-2>. The model is ~6 GB; it
+auto-downloads from HuggingFace on first launch.
+
+```bash
+# Need: a clean conda/venv env, Python 3.11+, an NVIDIA GPU with ≥ 8 GB VRAM,
+# CUDA driver, and ~15 GB free disk for the HF cache.
+pip install "vllm>=0.8.5"
+
+# Optional but recommended: cache HF weights on a fast disk
+export HF_HOME=/path/to/hf-cache
+
+# Start vLLM — listens on :19260 (matches the SuwayomiOCR .env default)
+CUDA_VISIBLE_DEVICES=0 \
+vllm serve deepseek-ai/DeepSeek-OCR-2 \
+  --host 0.0.0.0 \
+  --port 19260 \
+  --trust-remote-code \
+  --max-model-len 8192
+```
+
+Wait for `Application startup complete.` Then verify:
+```bash
+curl -s http://127.0.0.1:19260/v1/models | python3 -m json.tool
+# → should list "deepseek-ai/DeepSeek-OCR-2"
+```
+
+> **No local GPU?** Use any hosted vision LLM instead (GPT-4o-mini,
+> Qwen-VL-Max via DashScope, …). See [Swapping the OCR backend](#swapping-the-ocr-backend).
+> Translation quality stays the same.
+
+### Step 3 — Configure `.env`
+
+```bash
+cp .env.example .env
+$EDITOR .env
+```
+
+Set these four lines (defaults are correct except `TRANSLATION_API_KEY`):
+```dotenv
+OCR_API_BASE_URL=http://127.0.0.1:19260/v1
+OCR_API_MODEL=deepseek-ai/DeepSeek-OCR-2
+
+TRANSLATION_API_BASE_URL=https://api.deepseek.com/v1
+TRANSLATION_API_MODEL=deepseek-v4-flash
+TRANSLATION_API_KEY=sk-paste-your-key-here
+```
+
+### Step 4 — Run the SuwayomiOCR server
+
+```bash
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+python -m suwayomi_ocr
+```
+
+You should see:
+```
+[*] translation API client initialized (model=deepseek-v4-flash)
+[*] OCR backend reachable at http://127.0.0.1:19260/v1
+[*] SuwayomiOCR listening on http://<your-LAN-ip>:12233
+```
+
+Done — point your SuwayomiGO app at `http://<your-LAN-ip>:12233`. See
+[SuwayomiGO client setup](#suwayomigo-client-setup) for the two settings to
+fill in on the phone.
 
 ---
 

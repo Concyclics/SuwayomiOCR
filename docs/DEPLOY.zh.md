@@ -6,6 +6,7 @@
 本文档涵盖**原生**部署与 **Docker** 部署，并说明如何把 OCR / 翻译后端替换为
 任意 OpenAI 兼容的提供商。
 
+- [推荐组合（TL;DR）](#推荐组合tldr)
 - [快速选择](#快速选择)
 - [方案 A — 原生（venv）](#方案-a--原生venv)
 - [方案 B — Docker（单镜像）](#方案-b--docker单镜像)
@@ -15,6 +16,90 @@
 - [替换翻译后端](#替换翻译后端)
 - [SuwayomiGO 客户端设置](#suwayomigo-客户端设置)
 - [生产环境建议](#生产环境建议)
+
+---
+
+## 推荐组合（TL;DR）
+
+我们 **benchmark 实测最佳** 的组合（详见 [BENCHMARKS.zh.md](BENCHMARKS.zh.md)）：
+
+| 阶段 | 模型 | 部署位置 |
+|---|---|---|
+| **OCR** | [`deepseek-ai/DeepSeek-OCR-2`](https://huggingface.co/deepseek-ai/DeepSeek-OCR-2)（3B 参数，BF16，约 7 GB 显存） | 本机 vLLM（一张 GPU 就够） |
+| **翻译** | `deepseek-v4-flash` | DeepSeek 云端（约 ¥2.5 / 千页） |
+
+为什么是这个组合：DeepSeek-OCR-2 是**专门为 OCR 训练**的模型，密集日文漫画文字识别明显优于通用 vision LLM；`deepseek-v4-flash` 在 [benchmark](BENCHMARKS.zh.md) 的 BLEU/chrF 指标上胜出，且价格便宜到个人使用基本忽略不计。
+
+### Step 1 — 申请 DeepSeek API Key
+
+1. 注册 **<https://platform.deepseek.com>**。
+2. 打开 **<https://platform.deepseek.com/api_keys>**，点 *Create new key* 创建一把。
+3. 充值 5–10 元 RMB —— 可以撑数千页漫画，个人使用基本花不完。
+4. 复制密钥（`sk-...`）。下面 Step 3 要粘到 `.env` 里。
+
+### Step 2 — 用 vLLM 跑 DeepSeek-OCR-2（首次配置，需带 GPU 的机器）
+
+仓库地址：<https://github.com/deepseek-ai/DeepSeek-OCR-2>。模型权重约 6 GB，首次启动时会从 HuggingFace 自动下载。
+
+```bash
+# 要求：干净的 conda/venv 环境、Python 3.11+、NVIDIA GPU 显存 ≥ 8 GB、
+# CUDA 驱动正常、HF 缓存盘有 15 GB 余量。
+pip install "vllm>=0.8.5"
+
+# 可选但建议：把 HF 权重缓存放在快盘上
+export HF_HOME=/path/to/hf-cache
+
+# 拉起 vLLM —— 监听 :19260（与 SuwayomiOCR .env 默认值对齐）
+CUDA_VISIBLE_DEVICES=0 \
+vllm serve deepseek-ai/DeepSeek-OCR-2 \
+  --host 0.0.0.0 \
+  --port 19260 \
+  --trust-remote-code \
+  --max-model-len 8192
+```
+
+看到 `Application startup complete.` 后，验证一下：
+```bash
+curl -s http://127.0.0.1:19260/v1/models | python3 -m json.tool
+# → 应该列出 "deepseek-ai/DeepSeek-OCR-2"
+```
+
+> **没有 GPU？** 可以换用任意云端 vision LLM（GPT-4o-mini、阿里 Qwen-VL-Max 等），
+> 参考 [替换 OCR 后端](#替换-ocr-后端)。翻译质量不受影响。
+
+### Step 3 — 配置 `.env`
+
+```bash
+cp .env.example .env
+$EDITOR .env
+```
+
+填这四行（其它都用默认即可，主要是 `TRANSLATION_API_KEY` 必填）：
+```dotenv
+OCR_API_BASE_URL=http://127.0.0.1:19260/v1
+OCR_API_MODEL=deepseek-ai/DeepSeek-OCR-2
+
+TRANSLATION_API_BASE_URL=https://api.deepseek.com/v1
+TRANSLATION_API_MODEL=deepseek-v4-flash
+TRANSLATION_API_KEY=sk-paste-your-key-here
+```
+
+### Step 4 — 拉起 SuwayomiOCR
+
+```bash
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+python -m suwayomi_ocr
+```
+
+应看到：
+```
+[*] translation API client initialized (model=deepseek-v4-flash)
+[*] OCR backend reachable at http://127.0.0.1:19260/v1
+[*] SuwayomiOCR listening on http://<你机器的局域网IP>:12233
+```
+
+收工。打开 SuwayomiGO App，按 [SuwayomiGO 客户端设置](#suwayomigo-客户端设置) 填两个字段即可使用。
 
 ---
 

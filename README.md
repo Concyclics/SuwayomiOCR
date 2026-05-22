@@ -74,6 +74,11 @@ python -m suwayomi_ocr
 Then in the SuwayomiGO Android app, set OCR server URL to
 `http://<your-LAN-ip>:12233` and OCR secret key to your `SERVER_API_KEY`.
 
+> **Recommended setup: DeepSeek-OCR-2 + deepseek-v4-flash** — the combination
+> that scored best in our [benchmark](docs/BENCHMARKS.md). Step-by-step in
+> [DEPLOY.md → Recommended setup](docs/DEPLOY.md#recommended-setup-tldr)
+> (DeepSeek API key + vLLM OCR backend + `.env`).
+
 For Docker / Docker Compose deployment and swapping OCR/translation backends,
 see **[DEPLOY.md](docs/DEPLOY.md)**.
 
