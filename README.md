@@ -19,7 +19,7 @@ contract — your SuwayomiGO app works unchanged.
 - **Manga-aware translation prompt** — title + chapter passed to the system message.
 - **Eager background translation** — `/get_translation` poll usually hits a warm cache.
 - **80 MB resident vs. 6 GB legacy** — no on-device PyTorch / EasyOCR / Manga-OCR transformer.
-- **Ships with a benchmark suite** — [BENCHMARKS.md](BENCHMARKS.md) measures BLEU / chrF /
+- **Ships with a benchmark suite** — [BENCHMARKS.md](docs/BENCHMARKS.md) measures BLEU / chrF /
   CharF1 / latency / tokens / USD cost across both translation backends.
 
 ## Architecture
@@ -68,20 +68,20 @@ python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env
 # edit .env — set TRANSLATION_API_KEY at minimum
-python server.py
+python -m suwayomi_ocr
 ```
 
 Then in the SuwayomiGO Android app, set OCR server URL to
 `http://<your-LAN-ip>:12233` and OCR secret key to your `SERVER_API_KEY`.
 
 For Docker / Docker Compose deployment and swapping OCR/translation backends,
-see **[DEPLOY.md](DEPLOY.md)**.
+see **[DEPLOY.md](docs/DEPLOY.md)**.
 
 ## Benchmarks
 
 A full evaluation across 132 manga pages comparing **DeepSeek-Chat** vs
 **Google Translate**, with BLEU/chrF/CharF1 metrics, token usage, and USD cost
-estimates, lives in **[BENCHMARKS.md](BENCHMARKS.md)**. Reproduce with:
+estimates, lives in **[BENCHMARKS.md](docs/BENCHMARKS.md)**. Reproduce with:
 
 ```bash
 # Point at your own paired dataset (JP raw / ZH reference scans):
@@ -100,20 +100,26 @@ translation errors on context-sensitive terms. Cost via DeepSeek ≈ $0.35 per
 
 ```
 SuwayomiOCR/
-├── server.py                FastAPI app, routes, auth, lifespan
-├── ocr_client.py            vision-LLM OCR call + post-processing
-├── translation_client.py    chat-LLM translation + Google fallback
-├── tokenizer.py             Janome morphological analyzer + dict lookup
-├── dict_engine.py           SQLite dict reader
-├── state.py                 last-OCR / last-translation cache
-├── config.py                pydantic-settings .env loader
-├── manga_dict.db            Yomitan 明镜日汉双解 (~38 MB)
+├── README.md (en)           README.zh.md (zh)
+├── requirements.txt
 ├── Dockerfile               production image
 ├── docker-compose.yml       single-service compose stack
 ├── .env.example             every env var with comments
-├── README.md (en)           README.zh.md (zh)
-├── DEPLOY.md (en)           DEPLOY.zh.md (zh)
-├── BENCHMARKS.md (en)       BENCHMARKS.zh.md (zh)
+├── suwayomi_ocr/            Python package (the server)
+│   ├── __init__.py
+│   ├── __main__.py          entry point: python -m suwayomi_ocr
+│   ├── server.py            FastAPI app, routes, auth, lifespan
+│   ├── config.py            pydantic-settings .env loader
+│   ├── ocr_client.py        vision-LLM OCR call + post-processing
+│   ├── translation_client.py  chat-LLM translation + Google fallback
+│   ├── tokenizer.py         Janome morphological analyzer + dict lookup
+│   ├── dict_engine.py       SQLite dict reader
+│   └── state.py             last-OCR / last-translation cache
+├── data/
+│   └── manga_dict.db        Yomitan 明镜日汉双解 (~38 MB)
+├── docs/
+│   ├── DEPLOY.md (en)       DEPLOY.zh.md (zh)
+│   └── BENCHMARKS.md (en)   BENCHMARKS.zh.md (zh)
 └── scripts/
     ├── eval.py              quick visual eyeball across N pages
     └── benchmark.py         full BLEU/chrF/cost report generator

@@ -18,7 +18,7 @@ _DEFAULT_REF = str(_SCRIPT_ROOT.parent / "Datasets" / "熟肉")
 
 sys.path.insert(0, str(_SCRIPT_ROOT))
 
-from config import settings  # noqa: E402
+from suwayomi_ocr.config import settings  # noqa: E402
 
 
 def _jpeg_b64(path: Path, quality: int = 80) -> str:

@@ -15,10 +15,9 @@ WORKDIR /app
 COPY requirements.txt ./
 RUN pip install -r requirements.txt
 
-# Copy app code + dictionary DB.
-COPY config.py state.py tokenizer.py dict_engine.py \
-     ocr_client.py translation_client.py server.py ./
-COPY manga_dict.db ./
+# Copy app package + dictionary DB.
+COPY suwayomi_ocr/ ./suwayomi_ocr/
+COPY data/manga_dict.db ./data/manga_dict.db
 
 EXPOSE 12233
 
@@ -29,4 +28,4 @@ req=urllib.request.Request(f'http://127.0.0.1:{os.environ.get(\"SERVER_PORT\",\"
 headers={'X-API-Key': os.environ.get('SERVER_API_KEY','')}); \
 sys.exit(0 if urllib.request.urlopen(req, timeout=3).status == 200 else 1)" || exit 1
 
-CMD ["python", "server.py"]
+CMD ["python", "-m", "suwayomi_ocr"]

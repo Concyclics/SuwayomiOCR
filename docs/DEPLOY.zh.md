@@ -43,7 +43,7 @@ cp .env.example .env
 # 编辑 .env — 至少设置 TRANSLATION_API_KEY
 $EDITOR .env
 
-python server.py
+python -m suwayomi_ocr
 # → 监听 0.0.0.0:12233
 ```
 
@@ -108,13 +108,13 @@ docker compose down
 ```
 
 默认 `docker-compose.yml` 用 `network_mode: host`。文件里有注释好的代码块演示如何
-切换到 bridge + 端口映射。详见 [docker-compose.yml](docker-compose.yml)。
+切换到 bridge + 端口映射。详见 [docker-compose.yml](../docker-compose.yml)。
 
 ---
 
 ## 配置参考
 
-所有配置项都在 `.env` 中（参考 [.env.example](.env.example)）。每一项同时也可以
+所有配置项都在 `.env` 中（参考 [.env.example](../.env.example)）。每一项同时也可以
 作为普通环境变量传入 Docker。
 
 | 变量 | 默认值 | 说明 |
@@ -175,7 +175,7 @@ OCR_API_KEY=sk-...
 
 > **注意：** vLLM 特有采样参数（`repetition_penalty`、`frequency_penalty`）会被放在
 > JSON body 顶层。OpenAI 等云厂商会静默忽略未知字段，请求依然成功。如果你的
-> provider 拒绝这些字段，在 [ocr_client.py](ocr_client.py) 里注释掉即可。
+> provider 拒绝这些字段，在 [ocr_client.py](../suwayomi_ocr/ocr_client.py) 里注释掉即可。
 
 ---
 

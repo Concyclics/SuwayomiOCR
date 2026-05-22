@@ -2,7 +2,7 @@ import re
 
 import httpx
 
-from config import settings
+from .config import settings
 
 
 class OcrUnavailableError(RuntimeError):

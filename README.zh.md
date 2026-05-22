@@ -18,7 +18,7 @@ OCR 走视觉大模型（默认：vLLM 部署的 **DeepSeek-OCR-2**），翻译�
 - **漫画感知翻译 prompt** — 漫画名 + 话数会进 system message。
 - **后台预翻译** — `/get_translation` 轮询时多半已经能命中缓存。
 - **80 MB 常驻 vs 旧版 6 GB** — 不再需要本机 PyTorch / EasyOCR / Manga-OCR 模型权重。
-- **自带 benchmark 套件** — [BENCHMARKS.zh.md](BENCHMARKS.zh.md) 衡量两种翻译后端的
+- **自带 benchmark 套件** — [BENCHMARKS.zh.md](docs/BENCHMARKS.zh.md) 衡量两种翻译后端的
   BLEU / chrF / CharF1 / 延迟 / token 用量 / 美元成本。
 
 ## 架构
@@ -67,20 +67,20 @@ python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env
 # 编辑 .env — 至少要设置 TRANSLATION_API_KEY
-python server.py
+python -m suwayomi_ocr
 ```
 
 然后在 SuwayomiGO Android App 里把 OCR 服务器 URL 设为
 `http://<你机器的局域网IP>:12233`，OCR 密钥设为你的 `SERVER_API_KEY`。
 
 Docker / Docker Compose 部署，以及如何替换 OCR / 翻译后端，
-请看 **[DEPLOY.zh.md](DEPLOY.zh.md)**。
+请看 **[DEPLOY.zh.md](docs/DEPLOY.zh.md)**。
 
 ## Benchmark 实验
 
 跨 132 页真实漫画对比 **DeepSeek-Chat** 与 **Google Translate** 的完整实验
 （BLEU/chrF/CharF1 指标、token 用量、美元成本估算）在
-**[BENCHMARKS.zh.md](BENCHMARKS.zh.md)** 。复现：
+**[BENCHMARKS.zh.md](docs/BENCHMARKS.zh.md)** 。复现：
 
 ```bash
 # 指向自己的配对数据集（日文生肉 / 中文熟肉扫描）：
@@ -98,20 +98,26 @@ $0.35 / 千页。
 
 ```
 SuwayomiOCR/
-├── server.py                FastAPI app、路由、鉴权、lifespan
-├── ocr_client.py            视觉大模型 OCR 调用 + 后处理
-├── translation_client.py    聊天大模型翻译 + Google 兜底
-├── tokenizer.py             Janome 分词 + 词典查询
-├── dict_engine.py           SQLite 词典读取器
-├── state.py                 上一次 OCR / 上一次翻译缓存
-├── config.py                pydantic-settings .env 加载
-├── manga_dict.db            明镜日汉双解词典 (~38 MB)
+├── README.md (en)           README.zh.md (zh)
+├── requirements.txt
 ├── Dockerfile               生产镜像
 ├── docker-compose.yml       单服务 compose 编排
 ├── .env.example             所有环境变量带注释
-├── README.md (en)           README.zh.md (zh)
-├── DEPLOY.md (en)           DEPLOY.zh.md (zh)
-├── BENCHMARKS.md (en)       BENCHMARKS.zh.md (zh)
+├── suwayomi_ocr/            Python 包（服务本体）
+│   ├── __init__.py
+│   ├── __main__.py          入口：python -m suwayomi_ocr
+│   ├── server.py            FastAPI app、路由、鉴权、lifespan
+│   ├── config.py            pydantic-settings .env 加载
+│   ├── ocr_client.py        视觉大模型 OCR 调用 + 后处理
+│   ├── translation_client.py  聊天大模型翻译 + Google 兜底
+│   ├── tokenizer.py         Janome 分词 + 词典查询
+│   ├── dict_engine.py       SQLite 词典读取器
+│   └── state.py             上一次 OCR / 上一次翻译缓存
+├── data/
+│   └── manga_dict.db        明镜日汉双解词典 (~38 MB)
+├── docs/
+│   ├── DEPLOY.md (en)       DEPLOY.zh.md (zh)
+│   └── BENCHMARKS.md (en)   BENCHMARKS.zh.md (zh)
 └── scripts/
     ├── eval.py              快速过几页眼观结果
     └── benchmark.py         完整 BLEU/chrF/成本报告生成器

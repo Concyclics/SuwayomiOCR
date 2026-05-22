@@ -8,11 +8,11 @@ import uvicorn
 from fastapi import Body, Depends, FastAPI, HTTPException, Security, status
 from fastapi.security import APIKeyHeader
 
-import state
-from config import settings
-from ocr_client import OcrUnavailableError, recognize
-from tokenizer import analyze
-from translation_client import translate
+from . import state
+from .config import settings
+from .ocr_client import OcrUnavailableError, recognize
+from .tokenizer import analyze
+from .translation_client import translate
 
 MAX_IMAGE_BYTES = 5 * 1024 * 1024  # 5 MB
 
@@ -154,10 +154,14 @@ async def get_translation(_: str = Depends(verify_api_key)) -> dict:
     return {"translation": result}
 
 
-if __name__ == "__main__":
+def main() -> None:
     uvicorn.run(
-        "server:app",
+        "suwayomi_ocr.server:app",
         host=settings.SERVER_HOST,
         port=settings.SERVER_PORT,
         log_level="info",
     )
+
+
+if __name__ == "__main__":
+    main()

@@ -42,19 +42,19 @@ import httpx
 from openai import AsyncOpenAI
 from PIL import Image
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-
-from config import settings  # noqa: E402
-from ocr_client import recognize as ocr_recognize  # noqa: E402
-from translation_client import _ai_client, _build_system_prompt, _translate_google  # noqa: E402
-
 import os as _os
 ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
+
+from suwayomi_ocr.config import settings  # noqa: E402
+from suwayomi_ocr.ocr_client import recognize as ocr_recognize  # noqa: E402
+from suwayomi_ocr.translation_client import _ai_client, _build_system_prompt, _translate_google  # noqa: E402
+
 RAW_DIR = Path(_os.environ.get("BENCHMARK_RAW_DIR", str(ROOT.parent / "Datasets" / "生肉")))
 REF_DIR = Path(_os.environ.get("BENCHMARK_REF_DIR", str(ROOT.parent / "Datasets" / "熟肉")))
 RESULTS_PATH = ROOT / "benchmark_results.jsonl"
-REPORT_PATH_EN = ROOT / "BENCHMARKS.md"
-REPORT_PATH_ZH = ROOT / "BENCHMARKS.zh.md"
+REPORT_PATH_EN = ROOT / "docs" / "BENCHMARKS.md"
+REPORT_PATH_ZH = ROOT / "docs" / "BENCHMARKS.zh.md"
 
 # Translation API pricing (USD per 1M tokens). Defaults match DeepSeek-Chat
 # as of late-2025 (input $0.27 miss / $0.07 hit, output $1.10). If you swap

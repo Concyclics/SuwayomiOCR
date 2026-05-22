@@ -3,10 +3,12 @@ import sqlite3
 import threading
 
 
+_DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
+
+
 class SQLiteDictEngine:
     def __init__(self, db_filename: str = "manga_dict.db") -> None:
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        self.db_path = os.path.join(current_dir, db_filename)
+        self.db_path = os.path.normpath(os.path.join(_DATA_DIR, db_filename))
         self._conn: sqlite3.Connection | None = None
         self._lock = threading.Lock()
 

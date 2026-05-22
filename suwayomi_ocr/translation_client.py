@@ -3,7 +3,7 @@ import time
 
 from openai import AsyncOpenAI
 
-from config import settings
+from .config import settings
 
 _ai_client: AsyncOpenAI | None = None
 if settings.TRANSLATION_API_KEY and settings.TRANSLATION_API_KEY != "sk-REPLACE-ME":

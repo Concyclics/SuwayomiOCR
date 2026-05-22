@@ -43,7 +43,7 @@ cp .env.example .env
 # edit .env — at minimum set TRANSLATION_API_KEY
 $EDITOR .env
 
-python server.py
+python -m suwayomi_ocr
 # → listens on 0.0.0.0:12233
 ```
 
@@ -112,13 +112,13 @@ docker compose down
 
 The default `docker-compose.yml` uses `network_mode: host`. The file has
 commented-out blocks showing how to switch to bridge networking with port
-mapping. See [docker-compose.yml](docker-compose.yml).
+mapping. See [docker-compose.yml](../docker-compose.yml).
 
 ---
 
 ## Configuration reference
 
-All settings live in `.env` (see [.env.example](.env.example)). Every value
+All settings live in `.env` (see [.env.example](../.env.example)). Every value
 also works as a regular environment variable when running via Docker.
 
 | Variable | Default | Notes |
@@ -182,7 +182,7 @@ OCR_API_KEY=sk-...
 > `frequency_penalty`) are sent at the top level of the JSON body. Hosted
 > providers like OpenAI will silently ignore unknown fields, so the request
 > still succeeds. If your provider rejects them, comment them out in
-> [ocr_client.py](ocr_client.py).
+> [ocr_client.py](../suwayomi_ocr/ocr_client.py).
 
 ---
 

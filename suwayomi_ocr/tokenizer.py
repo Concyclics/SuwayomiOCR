@@ -1,6 +1,6 @@
 from janome.tokenizer import Tokenizer
 
-from dict_engine import dict_engine
+from .dict_engine import dict_engine
 
 _tokenizer = Tokenizer()
 
