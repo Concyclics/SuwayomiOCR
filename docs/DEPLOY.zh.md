@@ -7,6 +7,7 @@
 任意 OpenAI 兼容的提供商。
 
 - [推荐组合（TL;DR）](#推荐组合tldr)
+- [DeepSeek-OCR-2 第三方托管平台（无需 GPU）](#deepseek-ocr-2-第三方托管平台无需-gpu)
 - [快速选择](#快速选择)
 - [方案 A — 原生（venv）](#方案-a--原生venv)
 - [方案 B — Docker（单镜像）](#方案-b--docker单镜像)
@@ -64,8 +65,9 @@ curl -s http://127.0.0.1:19260/v1/models | python3 -m json.tool
 # → 应该列出 "deepseek-ai/DeepSeek-OCR-2"
 ```
 
-> **没有 GPU？** 可以换用任意云端 vision LLM（GPT-4o-mini、阿里 Qwen-VL-Max 等），
-> 参考 [替换 OCR 后端](#替换-ocr-后端)。翻译质量不受影响。
+> **没有 GPU？** 两个选择：① 用[下面列的第三方托管平台](#deepseek-ocr-2-第三方托管平台无需-gpu)
+> 跑 DeepSeek-OCR-2（OCR 质量不变）；② 改用通用 vision LLM（GPT-4o-mini、Qwen-VL-Max 等），
+> 参考 [替换 OCR 后端](#替换-ocr-后端)。
 
 ### Step 3 — 配置 `.env`
 
@@ -100,6 +102,46 @@ python -m suwayomi_ocr
 ```
 
 收工。打开 SuwayomiGO App，按 [SuwayomiGO 客户端设置](#suwayomigo-客户端设置) 填两个字段即可使用。
+
+---
+
+## DeepSeek-OCR-2 第三方托管平台（无需 GPU）
+
+如果你没有 GPU 或不想自己跑 vLLM，下面几家平台提供了 DeepSeek-OCR-2 的 OpenAI 兼容
+API。开源模型名是 **`deepseek-ai/DeepSeek-OCR-2`**，第三方平台多写成
+**`deepseek/deepseek-ocr-2`**。
+
+调研截至 **2026-05-22**。下单/接入前请到对应平台控制台再次确认模型 ID 与 base URL。
+
+| 平台 | 类型 | 模型 ID | 备注 |
+|---|---|---|---|
+| **[Novita AI](https://novita.ai/models/model-detail/deepseek-deepseek-ocr-2)** ⭐ | 托管 Serverless | `deepseek/deepseek-ocr-2` | 文档最明确：OpenAI-compatible，输入 image/text，输出 text，8K 上下文。 |
+| [Siray.ai](https://blog.siray.ai/deepseek-ocr-2/) | 托管统一 API | DeepSeek OCR 2 | 官方博客确认已上线；具体 model id 需进控制台看。 |
+| [JieKou.AI / 接口AI](https://jiekou.ai/models/model-detail/deepseek-deepseek-ocr-2) | 国内聚合 | `deepseek/deepseek-ocr-2` | 适合国内快速测试；稳定性 / 价格 / 合规自行评估。 |
+| [302.AI](https://302.ai/product/detail/ppio-deepseek-deepseek-ocr-2) | 聚合 API | `deepseek/deepseek-ocr-2` | 调用前在控制台确认模型仍可用。 |
+| [Hugging Face Inference Endpoints](https://huggingface.co/deepseek-ai/DeepSeek-OCR-2) | 自部署 | `deepseek-ai/DeepSeek-OCR-2` | 直接从 HF 模型页拉起独占 GPU endpoint。 |
+| [vLLM / SGLang 自部署](https://docs.vllm.ai/projects/recipes/en/latest/DeepSeek/DeepSeek-OCR-2.html) | 自部署 | `deepseek-ai/DeepSeek-OCR-2` | 上面《推荐组合》走的就是这条；私有化、批量首选。 |
+| [ModelScope 魔搭 + 阿里云函数计算](https://modelscope.cn/models/deepseek-ai/DeepSeek-OCR-2) | 阿里云自部署 | `deepseek-ai/DeepSeek-OCR-2` | 在 ModelScope 创空间或函数计算里部署。 |
+
+### 一键切换
+
+拿到第三方的 endpoint + key 之后，改 `.env`：
+
+```dotenv
+# 示例：Novita AI
+OCR_API_BASE_URL=https://api.novita.ai/openai/v1   # 实际 base URL 以平台文档为准
+OCR_API_MODEL=deepseek/deepseek-ocr-2              # 用平台控制台显示的 ID
+OCR_API_KEY=sk-...
+```
+
+重启服务（`python -m suwayomi_ocr`）。翻译还走 DeepSeek-v4-flash，不需要动。
+
+### 这些平台**暂时没有**托管 DeepSeek-OCR-2（别绕弯子）
+
+- **DeepSeek 官方 API**（`api.deepseek.com`）—— 只有 LLM 系列（v4-flash / v4-pro / chat / reasoner），没有 OCR-2。
+- **DeepInfra** —— 有 `deepseek-ai/DeepSeek-OCR`（**上一代 v1，已标记下线**），不是 OCR-2。
+- **Google Vertex AI** —— `deepseek-ocr-maas`（v1 MaaS），不是 OCR-2。
+- **阿里云百炼** —— 只托管 DeepSeek LLM（chat / reasoner），没有 OCR 一键调用。阿里云路线请走 ModelScope + 函数计算。
 
 ---
 

@@ -7,6 +7,7 @@ This document covers both **bare-metal** and **Docker** deployment, and how
 to swap the OCR / translation backends to any OpenAI-compatible provider.
 
 - [Recommended setup (TL;DR)](#recommended-setup-tldr)
+- [Hosted DeepSeek-OCR-2 providers (no GPU needed)](#hosted-deepseek-ocr-2-providers-no-gpu-needed)
 - [Quick choice](#quick-choice)
 - [Option A — Bare metal (venv)](#option-a--bare-metal-venv)
 - [Option B — Docker (single image)](#option-b--docker-single-image)
@@ -68,9 +69,10 @@ curl -s http://127.0.0.1:19260/v1/models | python3 -m json.tool
 # → should list "deepseek-ai/DeepSeek-OCR-2"
 ```
 
-> **No local GPU?** Use any hosted vision LLM instead (GPT-4o-mini,
-> Qwen-VL-Max via DashScope, …). See [Swapping the OCR backend](#swapping-the-ocr-backend).
-> Translation quality stays the same.
+> **No local GPU?** Either use a hosted DeepSeek-OCR-2 endpoint (see
+> [providers below](#hosted-deepseek-ocr-2-providers-no-gpu-needed) — keeps the OCR quality
+> identical) or swap to a general vision LLM (GPT-4o-mini, Qwen-VL-Max …)
+> per [Swapping the OCR backend](#swapping-the-ocr-backend).
 
 ### Step 3 — Configure `.env`
 
@@ -107,6 +109,49 @@ You should see:
 Done — point your SuwayomiGO app at `http://<your-LAN-ip>:12233`. See
 [SuwayomiGO client setup](#suwayomigo-client-setup) for the two settings to
 fill in on the phone.
+
+---
+
+## Hosted DeepSeek-OCR-2 providers (no GPU needed)
+
+If you can't (or don't want to) run vLLM yourself, several third-party
+platforms host DeepSeek-OCR-2 as an OpenAI-compatible API. The open-source
+model id is **`deepseek-ai/DeepSeek-OCR-2`**; most third-party providers
+publish it as **`deepseek/deepseek-ocr-2`**.
+
+Surveyed **2026-05-22**. Always check the provider's console for the
+current model id and exact base URL before pasting into `.env`.
+
+| Provider | Type | Model id | Notes |
+|---|---|---|---|
+| **[Novita AI](https://novita.ai/models/model-detail/deepseek-deepseek-ocr-2)** ⭐ | hosted serverless | `deepseek/deepseek-ocr-2` | Best-documented; OpenAI-compatible, image+text in, text out, 8K context. |
+| [Siray.ai](https://blog.siray.ai/deepseek-ocr-2/) | hosted unified API | DeepSeek OCR 2 | Confirmed live on launch blog; exact model id requires console login. |
+| [JieKou.AI / 接口AI](https://jiekou.ai/models/model-detail/deepseek-deepseek-ocr-2) | domestic aggregator | `deepseek/deepseek-ocr-2` | Fast for quick tests from mainland China. Verify SLA / pricing yourself. |
+| [302.AI](https://302.ai/product/detail/ppio-deepseek-deepseek-ocr-2) | aggregator | `deepseek/deepseek-ocr-2` | Verify model is still live in the console before relying on it. |
+| [Hugging Face Inference Endpoints](https://huggingface.co/deepseek-ai/DeepSeek-OCR-2) | DIY | `deepseek-ai/DeepSeek-OCR-2` | Spin up a dedicated GPU endpoint from the HF model page. |
+| [vLLM / SGLang self-host](https://docs.vllm.ai/projects/recipes/en/latest/DeepSeek/DeepSeek-OCR-2.html) | self-deploy | `deepseek-ai/DeepSeek-OCR-2` | What `Recommended setup` above does. Best for privacy + bulk. |
+| [ModelScope 魔搭 + Aliyun FC](https://modelscope.cn/models/deepseek-ai/DeepSeek-OCR-2) | self-deploy on Aliyun | `deepseek-ai/DeepSeek-OCR-2` | Deploy as a Function Compute service or studio. |
+
+### Quick swap
+
+Once you have an endpoint URL + key from any of the above, edit `.env`:
+
+```dotenv
+# Example: Novita AI
+OCR_API_BASE_URL=https://api.novita.ai/openai/v1   # check provider docs for exact URL
+OCR_API_MODEL=deepseek/deepseek-ocr-2              # use the id the provider shows you
+OCR_API_KEY=sk-...
+```
+
+Restart the server (`python -m suwayomi_ocr`). Translation backend stays on
+DeepSeek-v4-flash unchanged.
+
+### Not currently hosting DeepSeek-OCR-2 (don't waste your time)
+
+- **DeepSeek's own API** (`api.deepseek.com`) — only LLMs (v4-flash, v4-pro, chat, reasoner); no OCR-2 endpoint.
+- **DeepInfra** — `deepseek-ai/DeepSeek-OCR` (the previous-gen v1, marked for deprecation), **not OCR-2**.
+- **Google Vertex AI** — `deepseek-ocr-maas` (v1 via MaaS), **not OCR-2**.
+- **Aliyun Bailian (百炼)** — only DeepSeek LLMs (chat/reasoner). No OCR-2 one-click endpoint. For Aliyun, use ModelScope + Function Compute instead.
 
 ---
 
