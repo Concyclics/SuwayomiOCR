@@ -1,9 +1,12 @@
 import asyncio
+import re
 import time
 
 from openai import AsyncOpenAI
 
 from .config import settings
+
+_THINK_RE = re.compile(r"<think>.*?</think>\s*|</?think>\s*", re.DOTALL | re.IGNORECASE)
 
 _ai_client: AsyncOpenAI | None = None
 if settings.TRANSLATION_API_KEY and settings.TRANSLATION_API_KEY != "sk-REPLACE-ME":
@@ -48,11 +51,15 @@ async def _translate_ai(text: str, manga_name: str) -> str:
             {"role": "user", "content": text},
         ],
         temperature=0.3,
-        max_tokens=200,
+        max_tokens=512,
         stream=False,
+        # Disable chain-of-thought for thinking models (Qwen3 / SGLang).
+        # Cloud providers (DeepSeek, OpenAI) ignore unknown extra_body fields.
+        extra_body={"chat_template_kwargs": {"enable_thinking": False}},
     )
     print(f"[ai-translate] {time.time() - start:.2f}s")
-    return (response.choices[0].message.content or "").strip()
+    result = (response.choices[0].message.content or "").strip()
+    return _THINK_RE.sub("", result).strip()
 
 
 _GOOGLE_MAX_CHARS = 4500  # GoogleTranslator rejects much longer single calls.
