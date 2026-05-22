@@ -5,20 +5,25 @@ We send the union of every known "disable thinking" field at once; each
 provider silently ignores fields it doesn't recognise, so this is
 zero-config and safe for non-thinking models too.
 
-Recognised formats:
+Recognised formats (default bundle):
 
-  | Provider                                  | Field |
-  |-------------------------------------------|-------|
+  | Provider                                      | Field |
+  |-----------------------------------------------|-------|
   | DeepSeek v4-flash / v4-pro (api.deepseek.com) | `thinking: {type: "disabled"}` |
-  | Doubao / Volcano Ark thinking models      | `thinking: {type: "disabled"}` |
-  | Anthropic via OpenAI-compat proxy         | `thinking: {type: "disabled"}` |
-  | SGLang serving Qwen3 chat template        | `chat_template_kwargs: {enable_thinking: false}` |
-  | vLLM serving Qwen3 chat template          | `chat_template_kwargs: {enable_thinking: false}` |
-  | DashScope Qwen3-* native field            | `enable_thinking: false` |
-  | OpenAI o-series / GPT-5                   | `reasoning_effort: "minimal"` |
+  | Doubao / Volcano Ark thinking models          | `thinking: {type: "disabled"}` |
+  | Anthropic via OpenAI-compat proxy             | `thinking: {type: "disabled"}` |
+  | SGLang serving Qwen3 chat template            | `chat_template_kwargs: {enable_thinking: false}` |
+  | vLLM serving Qwen3 chat template              | `chat_template_kwargs: {enable_thinking: false}` |
+  | DashScope Qwen3-* native field                | `enable_thinking: false` |
 
-For an unusual provider, set `OCR_EXTRA_BODY` / `TRANSLATION_EXTRA_BODY`
-to a JSON object — that replaces the default bundle entirely.
+Caveats:
+- DeepSeek's API **strictly validates** `reasoning_effort` and rejects any
+  unknown enum value with HTTP 400. It is therefore NOT in the default
+  bundle. OpenAI o-series / GPT-5 users should opt in via env var:
+      TRANSLATION_EXTRA_BODY='{"reasoning_effort": "minimal"}'
+  (or use `"low"` for o1/o3 which don't accept `minimal`).
+- For an unusual provider, set `OCR_EXTRA_BODY` / `TRANSLATION_EXTRA_BODY`
+  to a JSON object — that replaces the default bundle entirely.
 """
 
 import json
@@ -28,7 +33,6 @@ _DISABLE_THINKING_BUNDLE = {
     "thinking": {"type": "disabled"},
     "chat_template_kwargs": {"enable_thinking": False},
     "enable_thinking": False,
-    "reasoning_effort": "minimal",
 }
 
 
