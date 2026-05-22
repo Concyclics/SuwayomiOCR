@@ -5,6 +5,7 @@ import time
 from openai import AsyncOpenAI
 
 from .config import settings
+from .provider_compat import disable_thinking_extra
 
 _THINK_RE = re.compile(r"<think>.*?</think>\s*|</?think>\s*", re.DOTALL | re.IGNORECASE)
 
@@ -53,14 +54,8 @@ async def _translate_ai(text: str, manga_name: str) -> str:
         temperature=0.3,
         max_tokens=512,
         stream=False,
-        # Disable thinking/chain-of-thought.
-        # DeepSeek cloud (v4-flash / v4-pro): {"thinking": {"type": "disabled"}}
-        # SGLang / Qwen local: chat_template_kwargs
-        # Each provider silently ignores the other's unknown field.
-        extra_body={
-            "thinking": {"type": "disabled"},
-            "chat_template_kwargs": {"enable_thinking": False},
-        },
+        # Disable thinking across every known provider (see provider_compat).
+        extra_body=disable_thinking_extra("TRANSLATION_EXTRA_BODY"),
     )
     print(f"[ai-translate] {time.time() - start:.2f}s")
     result = (response.choices[0].message.content or "").strip()

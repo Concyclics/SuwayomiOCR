@@ -3,6 +3,7 @@ import re
 import httpx
 
 from .config import settings
+from .provider_compat import disable_thinking_extra
 
 
 class OcrUnavailableError(RuntimeError):
@@ -92,10 +93,11 @@ async def recognize(jpeg_b64: str) -> str:
         "temperature": 0.0,
         "max_tokens": 4096,
         "stream": False,
-        # Disable chain-of-thought for thinking models (SGLang / Qwen3).
-        # Cloud providers and vLLM silently ignore unknown top-level fields.
-        "chat_template_kwargs": {"enable_thinking": False},
     }
+    # Disable thinking across every known provider format (DeepSeek v4,
+    # SGLang/vLLM Qwen3, DashScope Qwen3, OpenAI o-series). Unknown fields
+    # are silently ignored — safe for non-thinking models too.
+    payload.update(disable_thinking_extra("OCR_EXTRA_BODY"))
 
     if use_deepseek:
         # vLLM-specific params that suppress DeepSeek-OCR-2 repetition loops.
