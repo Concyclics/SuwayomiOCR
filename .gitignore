@@ -1,0 +1,11 @@
+.env
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+final_crop.png
+
+# Local benchmark run data — regenerate with `benchmark.py gather`
+benchmark_results.jsonl

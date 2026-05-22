@@ -1,0 +1,44 @@
+services:
+  suwayomi-ocr:
+    build: .
+    image: suwayomi-ocr:local
+    container_name: suwayomi-ocr
+    restart: unless-stopped
+    env_file:
+      - .env
+    # Host networking is the easiest path when your OCR backend (e.g. local
+    # vLLM on 127.0.0.1:19260) runs on the same machine. Container reaches
+    # localhost directly. SERVER_PORT from .env is the externally visible port.
+    network_mode: host
+
+    # ----- Alternative: bridge networking ----------------------------------
+    # If your OCR backend is remote (cloud OpenAI / Qwen / Anthropic), drop
+    # `network_mode: host` and use port mapping instead:
+    #
+    # ports:
+    #   - "12233:12233"
+    # extra_hosts:
+    #   - "host.docker.internal:host-gateway"   # reach the host's localhost
+    #
+    # Then in .env set, e.g., OCR_API_BASE_URL=http://host.docker.internal:19260/v1
+
+    # ----- Optional: persist gathered benchmark JSONL ----------------------
+    # volumes:
+    #   - ./benchmark_results.jsonl:/app/benchmark_results.jsonl
+
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - |
+          import os, urllib.request, sys
+          req = urllib.request.Request(
+              f"http://127.0.0.1:{os.environ.get('SERVER_PORT','12233')}/health",
+              headers={"X-API-Key": os.environ.get("SERVER_API_KEY", "")},
+          )
+          sys.exit(0 if urllib.request.urlopen(req, timeout=3).status == 200 else 1)
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3

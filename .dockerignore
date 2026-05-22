@@ -1,0 +1,28 @@
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Local artifacts and gathered data — not for the image.
+benchmark_results.jsonl
+BENCHMARKS.md
+BENCHMARKS.zh.md
+final_crop.png
+*.log
+
+# Secrets — use docker compose env_file or `docker run -e` instead.
+.env
+
+# Docs and scripts — only the runtime needs to be in the image.
+docs/
+scripts/
+README*.md
+DEPLOY*.md
+
+# VCS, editor, OS junk.
+.git/
+.gitignore
+.idea/
+.vscode/
+.DS_Store
