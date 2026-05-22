@@ -9,3 +9,6 @@ final_crop.png
 
 # Local benchmark run data — regenerate with `benchmark.py gather`
 benchmark_results.jsonl
+
+# Runtime logs
+*.log
